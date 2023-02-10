@@ -64,10 +64,10 @@ class Git {
 	 * @access  public
 	 * @param   string  repository path
 	 * @param   string  directory to source
-	 * @param   \action_plugin_gitbacked_editcommit plugin
+	 * @param   \DokuWiki_Action_Plugin plugin
 	 * @return  GitRepo
 	 */
-	public static function &create($repo_path, $source = null, \action_plugin_gitbacked_editcommit $plugin = null) {
+	public static function &create($repo_path, $source = null, \DokuWiki_Action_Plugin $plugin = null) {
 		return GitRepo::create_new($repo_path, $source, $plugin);
 	}
 
@@ -78,10 +78,10 @@ class Git {
 	 *
 	 * @access  public
 	 * @param   string  repository path
-	 * @param   \action_plugin_gitbacked_editcommit plugin
+	 * @param   \DokuWiki_Action_Plugin plugin
 	 * @return  GitRepo
 	 */
-	public static function open($repo_path, \action_plugin_gitbacked_editcommit $plugin = null) {
+	public static function open($repo_path, \DokuWiki_Action_Plugin $plugin = null) {
 		return new GitRepo($repo_path, $plugin);
 	}
 
@@ -95,10 +95,10 @@ class Git {
 	 * @param   string  repository path
 	 * @param   string  remote source
 	 * @param   string  reference path
-	 * @param   \action_plugin_gitbacked_editcommit plugin
+	 * @param   \DokuWiki_Action_Plugin plugin
 	 * @return  GitRepo
 	 **/
-	public static function &clone_remote($repo_path, $remote, $reference = null, \action_plugin_gitbacked_editcommit $plugin = null) {
+	public static function &clone_remote($repo_path, $remote, $reference = null, \DokuWiki_Action_Plugin $plugin = null) {
 		return GitRepo::create_new($repo_path, $plugin, $remote, true, $reference);
 	}
 
@@ -139,7 +139,7 @@ class GitRepo {
 	protected $bare = false;
 	protected $envopts = array();
 	// Fix for PHP <=7.3 compatibility: Type declarations for properties work since PHP >= 7.4 only.
-	// protected ?\action_plugin_gitbacked_editcommit $plugin = null;
+	// protected ?\DokuWiki_Action_Plugin $plugin = null;
 	protected $plugin = null;
 
 	/**
@@ -149,12 +149,12 @@ class GitRepo {
 	 *
 	 * @access  public
 	 * @param   string  repository path
-	 * @param   \action_plugin_gitbacked_editcommit plugin
+	 * @param   \DokuWiki_Action_Plugin plugin
 	 * @param   string  directory to source
 	 * @param   string  reference path
 	 * @return  GitRepo  or null in case of an error
 	 */
-	public static function &create_new($repo_path, \action_plugin_gitbacked_editcommit $plugin = null, $source = null, $remote_source = false, $reference = null) {
+	public static function &create_new($repo_path, \DokuWiki_Action_Plugin $plugin = null, $source = null, $remote_source = false, $reference = null) {
 		if (is_dir($repo_path) && file_exists($repo_path."/.git") && is_dir($repo_path."/.git")) {
 			throw new Exception(self::handle_create_new_error($repo_path, $reference, '"'.$repo_path.'" is already a git repository', $plugin));
 		} else {
@@ -185,11 +185,11 @@ class GitRepo {
 	 *
 	 * @access  public
 	 * @param   string  repository path
-	 * @param   \action_plugin_gitbacked_editcommit plugin
+	 * @param   \DokuWiki_Action_Plugin plugin
 	 * @param   bool    create if not exists?
 	 * @return  void
 	 */
-	public function __construct($repo_path = null, \action_plugin_gitbacked_editcommit $plugin = null, $create_new = false, $_init = true) {
+	public function __construct($repo_path = null, \DokuWiki_Action_Plugin $plugin = null, $create_new = false, $_init = true) {
 		$this->plugin = $plugin;
 		if (is_string($repo_path)) {
 			$this->set_repo_path($repo_path, $create_new, $_init);
@@ -367,7 +367,7 @@ class GitRepo {
 	 * @return  string  error message
 	 */
 	protected static function handle_create_new_error($repo_path, $reference, $error_message, $plugin) {
-		if ($plugin instanceof \action_plugin_gitbacked_editcommit) {
+		if ($plugin instanceof \DokuWiki_Action_Plugin) {
 			$plugin->notify_create_new_error($repo_path, $reference, $error_message);
 		}
 		return $error_message;
@@ -382,7 +382,7 @@ class GitRepo {
 	 * @return  string  error message
 	 */
 	protected function handle_repo_path_error($repo_path, $error_message) {
-		if ($this->plugin instanceof \action_plugin_gitbacked_editcommit) {
+		if ($this->plugin instanceof \DokuWiki_Action_Plugin) {
 			$this->plugin->notify_repo_path_error($repo_path, $error_message);
 		}
 		return $error_message;
@@ -400,7 +400,7 @@ class GitRepo {
 	 * @return  string  error message
 	 */
 	protected function handle_command_error($repo_path, $cwd, $command, $status, $error_message) {
-		if ($this->plugin instanceof \action_plugin_gitbacked_editcommit) {
+		if ($this->plugin instanceof \DokuWiki_Action_Plugin) {
 			$this->plugin->notify_command_error($repo_path, $cwd, $command, $status, $error_message);
 		}
 		return $error_message;
@@ -416,7 +416,7 @@ class GitRepo {
 	 * @return  void
 	 */
 	protected function handle_command_success($repo_path, $cwd, $command) {
-		if ($this->plugin instanceof \action_plugin_gitbacked_editcommit) {
+		if ($this->plugin instanceof \DokuWiki_Action_Plugin) {
 			$this->plugin->notify_command_success($repo_path, $cwd, $command);
 		}
 	}
@@ -735,11 +735,24 @@ class GitRepo {
 	 * @param strgin $format
 	 * @return string
 	 */
-	public function log($format = null) {
-		if ($format === null)
-			return $this->run('log');
-		else
-			return $this->run('log --pretty=format:"' . $format . '"');
+	public function log($format = null, $fullDiff = false, $filepath = null, $follow = false)
+	{
+		$diff = "";
+
+		if ($fullDiff){
+			$diff = "--full-diff -p ";
+		}
+
+		if ($follow){
+		    // Can't use full-diff with follow
+		    $diff = "--follow -- ";
+		}
+
+		if ($format === null) {
+			return $this->run('log --name-status' . $diff . $filepath);
+		} else {
+			return $this->run('log --name-status --date=format:"%Y-%m-%d %H:%M" --pretty=format:"' . $format . '" ' . $diff . $filepath);
+		}
 	}
 
 	/**
