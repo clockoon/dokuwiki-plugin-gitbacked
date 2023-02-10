@@ -1,0 +1,11 @@
+#dw__gitrecent div.gitrecent ul div.li ul {
+    /*display:inline-block;*/
+    margin-left: 2rem;
+    vertical-align:top;
+}
+#dw__gitrecent div.gitrecent ul div.li span.comment {
+    font-weight: bold;
+}
+#dw__gitrecent div.gitrecent ul div.li span.comment::before {
+    content: " – ";
+}
