@@ -74,6 +74,8 @@ namespace dokuwiki\plugin\gitbacked;
             $html = $html . '<li class="gitrecent">';
             
             $pageid = $this->filenameToId($filename);
+            // ACL check
+            if (auth_quickaclcheck($pageid) < AUTH_READ) continue;
             $mode = $this->getMode($filename);
 
             // add html

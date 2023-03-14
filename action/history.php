@@ -91,7 +91,7 @@ class action_plugin_gitbacked_history extends DokuWiki_Action_Plugin {
             } elseif(preg_match($filepattern,$line,$matches)) {
                 $commit['files'][] = array(
                     "status" => $matches[1],
-                    "filename" => stripcslashes($matches[2])
+                    "filename" => str_replace('"','',stripcslashes($matches[2])),
                 );
             }
             $line = strtok($separator);
